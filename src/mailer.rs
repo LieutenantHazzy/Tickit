@@ -3,7 +3,7 @@ use lettre::{
     message::header::ContentType, transport::smtp::authentication::Credentials, AsyncSmtpTransport,
     AsyncTransport, Message, Tokio1Executor,
 };
-use tracing::error;
+use tracing::{error, warn};
 
 #[derive(Clone)]
 pub struct Mailer {
@@ -15,6 +15,15 @@ pub struct Mailer {
 
 impl Mailer {
     pub fn new(config: &Config) -> Self {
+        if config.smtp_host.trim().is_empty() {
+            warn!("SMTP_HOST not set, mail is disabled");
+            return Self {
+                transport: None,
+                from: config.mail_from.clone(),
+                to_errors: config.mail_to_errors.clone(),
+                enabled: false,
+            };
+        }
         let creds = Credentials::new(config.smtp_username.clone(), config.smtp_password.clone());
         let transport = AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(&config.smtp_host)
             .unwrap_or_else(|_| {

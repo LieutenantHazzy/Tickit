@@ -68,6 +68,34 @@ your account you can disable open registration by setting `REGISTRATION_OPEN=fal
 
 Open `http://localhost:8081` (or your configured port).
 
+## Run with Docker
+
+Requires Docker + Docker Compose. Create your `.env` from `.env.example`, then build and start:
+
+```bash
+cp .env.example .env
+$EDITOR .env
+docker compose up -d --build
+```
+
+Notes:
+
+- `compose.yaml` overrides `BIND_ADDR=0.0.0.0` inside the container and publishes the app
+  on `127.0.0.1:8081`, so it stays behind your reverse proxy.
+- SQLite data lives in the named volume `tickit-data` (`/var/lib/tickit` inside), which
+  survives container rebuilds. `docker compose down` does not remove it.
+- Reminders use the server local timezone: set `TZ` in `compose.yaml` to your zone
+  (defaults to `Europe/Amsterdam`).
+- Mail is optional: leave `SMTP_HOST` empty in `.env` to run without reminders/error mail.
+- The image runs as an unprivileged user (uid 10001).
+
+Update to a new version:
+
+```bash
+git pull
+docker compose up -d --build
+```
+
 ## Deploy to server (SSH)
 
 1. Create a release from GitHub (tag `vX.Y.Z`) - the GitHub Actions workflow builds the

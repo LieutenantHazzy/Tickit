@@ -1,0 +1,20 @@
+services:
+  tickit:
+    build: .
+    image: tickit:0.1.0
+    container_name: tickit
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:8081"
+    env_file: .env
+    environment:
+      BIND_ADDR: 0.0.0.0
+      BIND_PORT: "8081"
+      DATA_DIR: /var/lib/tickit
+      DB_PATH: /var/lib/tickit/tickit.db
+      TZ: Europe/Amsterdam
+    volumes:
+      - tickit-data:/var/lib/tickit
+
+volumes:
+  tickit-data:
