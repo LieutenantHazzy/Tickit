@@ -1,4 +1,5 @@
 .env
+compose.override.yaml
 target/
 assets/css/tailwind.css
 .DS_Store
