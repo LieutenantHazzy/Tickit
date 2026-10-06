@@ -1,0 +1,7 @@
+.env
+target/
+assets/css/tailwind.css
+.DS_Store
+*.log
+tickit.db
+tickit.db-*

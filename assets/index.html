@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" x-data="app()" x-init="init()">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tickit</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.10/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+    <script src="/assets/js/app.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+    <div class="container mx-auto max-w-5xl p-4">
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-2xl font-bold">Tickit</h1>
+            <div class="flex gap-2">
+                <template x-if="user">
+                    <button @click="logout()" class="px-3 py-1 bg-red-500 text-white rounded" x-text="t('logout')"></button>
+                </template>
+                <button @click="toggleLang()" class="px-3 py-1 bg-blue-600 text-white rounded" x-text="lang === 'en' ? 'NL' : 'EN'"></button>
+            </div>
+        </div>
+
+        <template x-if="!user">
+            <div class="max-w-md mx-auto bg-white p-6 rounded shadow">
+                <h2 class="text-xl mb-4" x-text="authMode === 'login' ? t('login') : t('register')"></h2>
+                <template x-if="flash">
+                    <div class="mb-2 p-2 bg-red-100 text-red-700 rounded text-sm" x-text="flash"></div>
+                </template>
+                <input x-model="login.email" type="email" class="w-full p-2 border rounded mb-2" :placeholder="t('email')">
+                <input x-model="login.password" type="password" class="w-full p-2 border rounded mb-2" :placeholder="t('password')">
+                <input x-model="login.totp" type="text" inputmode="numeric" autocomplete="one-time-code" class="w-full p-2 border rounded mb-2" :placeholder="t('totp_optional')">
+                <button @click="doLogin()" class="w-full bg-blue-600 text-white p-2 rounded" x-text="authMode === 'login' ? t('login') : t('register')"></button>
+                <p class="mt-3 text-sm text-center">
+                    <span x-text="authMode === 'login' ? t('no_account') : t('has_account')"></span>
+                    <a href="#" @click.prevent="toggleAuthMode()" class="text-blue-600 underline" x-text="authMode === 'login' ? t('register') : t('login')"></a>
+                </p>
+            </div>
+        </template>
+
+        <template x-if="user">
+            <div>
+                <div class="flex gap-2 mb-4 flex-wrap">
+                    <button @click="showTodos()" class="px-3 py-1 rounded" :class="view === 'todos' ? 'bg-blue-600 text-white' : 'bg-gray-200'" x-text="t('todos')"></button>
+                    <button @click="showSettings()" class="px-3 py-1 rounded" :class="view === 'settings' ? 'bg-blue-600 text-white' : 'bg-gray-200'" x-text="t('settings')"></button>
+                    <button @click="exportJson()" class="px-3 py-1 bg-green-600 text-white rounded" x-text="t('export_json')"></button>
+                </div>
+
+                <template x-if="view === 'todos'">
+                    <div>
+                        <div class="bg-white p-4 rounded shadow mb-4">
+                            <h2 class="text-lg font-semibold mb-2" x-text="t('new_todo')"></h2>
+                            <input x-model="newTodo.title" type="text" class="w-full p-2 border rounded mb-2" :placeholder="t('title')">
+                            <textarea id="md-editor"></textarea>
+                            <div class="flex gap-2 mb-2 flex-wrap">
+                                <input x-model="newTodo.due_date" type="date" class="p-2 border rounded">
+                                <input x-model="newTodo.due_time" type="time" class="p-2 border rounded">
+                            </div>
+                            <button @click="addTodo()" class="bg-blue-600 text-white p-2 rounded" x-text="t('add')"></button>
+                        </div>
+                        <div class="space-y-2">
+                            <template x-for="todo in todos" :key="todo.id">
+                                <div class="bg-white p-3 rounded shadow flex items-center gap-3">
+                                    <input type="checkbox" :checked="todo.done === 1" @change="toggleTodo(todo.id)" class="w-5 h-5">
+                                    <div class="flex-1">
+                                        <h3 class="font-semibold" :class="todo.done ? 'line-through text-gray-400' : ''" x-text="todo.title"></h3>
+                                        <div class="text-sm text-gray-600" x-html="renderMarkdown(todo.description_md)"></div>
+                                        <p class="text-xs text-gray-500" x-text="formatDue(todo)"></p>
+                                    </div>
+                                </div>
+                            </template>
+                            <p x-show="todos.length === 0" class="text-gray-500 text-center py-6" x-text="t('no_todos')"></p>
+                        </div>
+                    </div>
+                </template>
+
+                <template x-if="view === 'settings'">
+                    <div class="max-w-lg">
+                        <div class="bg-white p-4 rounded shadow mb-4">
+                            <h2 class="text-lg font-semibold mb-3" x-text="t('settings')"></h2>
+                            <label class="block mb-1" x-text="t('language')"></label>
+                            <select x-model="settings.lang" class="w-full p-2 border rounded mb-3">
+                                <option value="en">English</option>
+                                <option value="nl">Nederlands</option>
+                            </select>
+                            <label class="block mb-1" x-text="t('daily_time')"></label>
+                            <div class="flex gap-2 mb-3">
+                                <input x-model.number="settings.hour" type="number" min="0" max="23" class="p-2 border rounded w-24">
+                                <span class="py-2">:</span>
+                                <input x-model.number="settings.min" type="number" min="0" max="59" class="p-2 border rounded w-24">
+                            </div>
+                            <button @click="saveSettings()" class="bg-blue-600 text-white p-2 rounded" x-text="t('save')"></button>
+                        </div>
+
+                        <div class="bg-white p-4 rounded shadow">
+                            <h2 class="text-lg font-semibold mb-3" x-text="t('two_fa')"></h2>
+                            <template x-if="!user.totp_enabled">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-2" x-text="t('totp_hint')"></p>
+                                    <button @click="setupTotp()" class="bg-blue-600 text-white p-2 rounded mb-3" x-text="t('totp_setup')"></button>
+                                    <template x-if="totp.secret">
+                                        <div class="mb-2">
+                                            <div id="qrcode" class="mb-2"></div>
+                                            <p class="text-xs text-gray-500 break-all mb-2" x-text="totp.secret"></p>
+                                            <input x-model="totp.code" type="text" inputmode="numeric" class="w-full p-2 border rounded mb-2" :placeholder="t('totp_code')">
+                                            <button @click="enableTotp()" class="bg-green-600 text-white p-2 rounded" x-text="t('totp_verify')"></button>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                            <template x-if="user.totp_enabled">
+                                <div>
+                                    <p class="text-sm text-green-700 mb-2" x-text="t('totp_active')"></p>
+                                    <button @click="disableTotp()" class="bg-red-600 text-white p-2 rounded" x-text="t('totp_disable')"></button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </template>
+    </div>
+</body>
+</html>

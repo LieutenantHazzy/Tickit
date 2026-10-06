@@ -1,0 +1,28 @@
+[package]
+name = "tickit"
+version = "0.1.0"
+edition = "2021"
+authors = ["Tickit"]
+description = "Self-hosted todo app with reminders and TOTP auth"
+license = "MIT"
+
+[dependencies]
+axum = { version = "0.7", features = ["macros"] }
+tokio = { version = "1.38", features = ["full"] }
+tower-http = { version = "0.5", features = ["fs", "trace"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+dotenvy = "0.15"
+config = "0.14"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+sqlx = { version = "0.7", features = ["runtime-tokio", "sqlite", "chrono", "macros", "migrate"] }
+argon2 = "0.5"
+rand = "0.8"
+chrono = { version = "0.4", features = ["serde"] }
+lettre = { version = "0.11", features = ["smtp-transport", "builder", "tokio1", "tokio1-native-tls"] }
+totp-rs = { version = "5.6", features = ["gen_secret", "otpauth"] }
+thiserror = "1.0"
+anyhow = "1.0"
+tokio-cron-scheduler = "0.10"
+uuid = { version = "1.10", features = ["v4"] }

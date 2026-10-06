@@ -1,0 +1,17 @@
+[Unit]
+Description=Tickit Todo App
+After=network.target
+
+[Service]
+Type=simple
+User=tickit
+Group=tickit
+WorkingDirectory=/var/lib/tickit
+EnvironmentFile=/etc/tickit/.env
+ExecStart=/usr/local/bin/tickit
+Restart=always
+RestartSec=5
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
